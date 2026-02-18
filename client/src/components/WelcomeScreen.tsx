@@ -50,8 +50,7 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         <div className="w-12 h-[2px] bg-gold-light rounded-full mb-8" />
 
         <h1 className="font-serif text-[2rem] sm:text-[2.4rem] font-semibold leading-[1.2] text-white tracking-[-0.02em] mb-5 drop-shadow-lg">
-          Residents of High Pointe,<br />
-          Help Us Design Something Extraordinary
+          Help Us Design An Extraordinary Community Experience For You!
         </h1>
 
         <p className="text-base text-white/80 font-light leading-relaxed max-w-[340px] mb-12 drop-shadow-md" style={{fontSize: '18px', fontWeight: '500'}}>
