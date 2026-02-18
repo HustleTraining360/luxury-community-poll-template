@@ -50,10 +50,11 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         <div className="w-12 h-[2px] bg-gold-light rounded-full mb-8" />
 
         <h1 className="font-serif text-[2rem] sm:text-[2.4rem] font-semibold leading-[1.2] text-white tracking-[-0.02em] mb-5 drop-shadow-lg">
+          Residents of High Pointe,<br />
           Help Us Design Something Extraordinary
         </h1>
 
-        <p className="text-base text-white/80 font-light leading-relaxed max-w-[340px] mb-12 drop-shadow-md">
+        <p className="text-base text-white/80 font-light leading-relaxed max-w-[340px] mb-12 drop-shadow-md" style={{fontSize: '18px', fontWeight: '500'}}>
           Your input shapes the future of our community experiences.
         </p>
 
@@ -62,7 +63,7 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           className="inline-flex items-center gap-2.5 bg-white/95 text-charcoal-deep px-10 py-4 rounded-full text-[0.9rem] font-medium tracking-[0.08em] uppercase transition-all duration-300 hover:bg-white hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 backdrop-blur-sm"
           whileTap={{ scale: 0.97 }}
         >
-          Begin
+          Take the poll
           <ArrowRight className="w-4 h-4" />
         </motion.button>
       </div>
