@@ -15,6 +15,13 @@
       "when": 1771385550385,
       "tag": "0001_youthful_tarot",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1771431236557,
+      "tag": "0002_deep_rocket_racer",
+      "breakpoints": true
     }
   ]
 }

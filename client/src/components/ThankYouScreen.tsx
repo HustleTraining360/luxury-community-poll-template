@@ -1,17 +1,21 @@
 /**
  * ThankYouScreen — Final screen with email capture and server-side persistence
- * Submits poll responses via tRPC to the database
+ * Submits all poll responses (q0–q20 + conditional fields) via tRPC to the database
  */
 import { motion } from "framer-motion";
 import { Check, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 
-interface ThankYouScreenProps {
+export interface ThankYouScreenProps {
   answers: Record<number, string>;
+  conditionalFields?: Record<string, string>;
 }
 
-export default function ThankYouScreen({ answers }: ThankYouScreenProps) {
+export default function ThankYouScreen({
+  answers,
+  conditionalFields = {},
+}: ThankYouScreenProps) {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -22,6 +26,7 @@ export default function ThankYouScreen({ answers }: ThankYouScreenProps) {
   const handleSubmit = () => {
     submitMutation.mutate({
       email: email || "",
+      // Original 7 questions
       q0: answers[0] || "",
       q1: answers[1] || "",
       q2: answers[2] || "",
@@ -29,6 +34,29 @@ export default function ThankYouScreen({ answers }: ThankYouScreenProps) {
       q4: answers[4] || "",
       q5: answers[5] || "",
       q6: answers[6] || "",
+      // Household & Life Stage
+      q7: answers[7] || "",
+      q8: answers[8] || "",
+      q9: answers[9] || "",
+      q9Ages: conditionalFields["q9Ages"] || "",
+      // Age & Work Stage
+      q10: answers[10] || "",
+      q11: answers[11] || "",
+      // Availability
+      q12: answers[12] || "",
+      q13: answers[13] || "",
+      // Wellness
+      q14: answers[14] || "",
+      q15: answers[15] || "",
+      // Lifestyle
+      q16: answers[16] || "",
+      q17: answers[17] || "",
+      // Pets & Hobbies
+      q18: answers[18] || "",
+      q18Other: conditionalFields["q18Other"] || "",
+      q19: answers[19] || "",
+      // Communication
+      q20: answers[20] || "",
     });
   };
 
@@ -73,15 +101,22 @@ export default function ThankYouScreen({ answers }: ThankYouScreenProps) {
           disabled={submitted || submitMutation.isPending}
           className={`
             w-full py-4 px-8 rounded-full text-[0.85rem] font-medium tracking-[0.08em] uppercase transition-all duration-300 inline-flex items-center justify-center gap-2
-            ${submitted
-              ? "bg-gold text-white cursor-default"
-              : "bg-charcoal text-cream hover:bg-charcoal-deep hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
+            ${
+              submitted
+                ? "bg-gold text-white cursor-default"
+                : "bg-charcoal text-cream hover:bg-charcoal-deep hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
             }
           `}
           whileTap={submitted ? {} : { scale: 0.97 }}
         >
-          {submitMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-          {submitted ? "Submitted" : submitMutation.isPending ? "Submitting…" : "Submit & Stay Connected"}
+          {submitMutation.isPending && (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          )}
+          {submitted
+            ? "Submitted"
+            : submitMutation.isPending
+            ? "Submitting\u2026"
+            : "Submit & Stay Connected"}
         </motion.button>
 
         {/* Error */}

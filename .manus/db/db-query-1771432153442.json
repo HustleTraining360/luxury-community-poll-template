@@ -1,0 +1,38 @@
+{
+  "query": "SELECT * FROM poll_submissions ORDER BY id DESC LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3BRKCepuS8iUV56.c31fe119bb28 --database BWHz55AK6qohH5qvS9sacQ --execute SELECT * FROM poll_submissions ORDER BY id DESC LIMIT 1;",
+  "rows": [
+    {
+      "id": "30009",
+      "email": "test@highpointe.com",
+      "q0": "Social Connector",
+      "q1": "Bring Guests",
+      "q2": "The Amenities",
+      "q3": "Private Chef Night",
+      "q4": "Elegant & Upscale",
+      "q5": "Small & Curated",
+      "q6": "Yes, Absolutely",
+      "createdAt": "2026-02-18 16:28:43",
+      "q7": "Couple",
+      "q8": "2",
+      "q9": "Yes",
+      "q9_ages": "5, 8",
+      "q10": "30–39",
+      "q11": "Full-Time",
+      "q12": "Weekend Evenings",
+      "q13": "Weekly",
+      "q14": "Group Fitness,Yoga / Pilates",
+      "q15": "Intermediate",
+      "q16": "Social Mixers",
+      "q17": "A Mix",
+      "q18": "Dog(s)",
+      "q18_other": "",
+      "q19": "Food & Wine",
+      "q20": "Email"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tq0\tq1\tq2\tq3\tq4\tq5\tq6\tcreatedAt\tq7\tq8\tq9\tq9_ages\tq10\tq11\tq12\tq13\tq14\tq15\tq16\tq17\tq18\tq18_other\tq19\tq20\n30009\ttest@highpointe.com\tSocial Connector\tBring Guests\tThe Amenities\tPrivate Chef Night\tElegant & Upscale\tSmall & Curated\tYes, Absolutely\t2026-02-18 16:28:43\tCouple\t2\tYes\t5, 8\t30–39\tFull-Time\tWeekend Evenings\tWeekly\tGroup Fitness,Yoga / Pilates\tIntermediate\tSocial Mixers\tA Mix\tDog(s)\t\tFood & Wine\tEmail\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

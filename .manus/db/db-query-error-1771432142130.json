@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, email, q1_identity, q8_household, q10_children, q10_children_ages, q15_wellness, q19_pets, q20_hobbies, q21_notifications, createdAt FROM poll_submissions ORDER BY id DESC LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3BRKCepuS8iUV56.c31fe119bb28 --database BWHz55AK6qohH5qvS9sacQ --execute SELECT id, email, q1_identity, q8_household, q10_children, q10_children_ages, q15_wellness, q19_pets, q20_hobbies, q21_notifications, createdAt FROM poll_submissions ORDER BY id DESC LIMIT 1;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'q1_identity' in 'field list'"
+  ]
+}

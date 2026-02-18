@@ -11,7 +11,7 @@ function createPublicContext(): TrpcContext {
 }
 
 describe("poll.submit", () => {
-  it("accepts valid submission with all fields", async () => {
+  it("accepts valid submission with all original fields", async () => {
     const caller = appRouter.createCaller(createPublicContext());
     const result = await caller.poll.submit({
       email: "test@example.com",
@@ -26,19 +26,60 @@ describe("poll.submit", () => {
     expect(result).toEqual({ success: true });
   });
 
-  it("accepts submission without email", async () => {
+  it("accepts submission with all new section fields", async () => {
     const caller = appRouter.createCaller(createPublicContext());
     const result = await caller.poll.submit({
+      email: "full@example.com",
       q0: "Luxury Lover",
+      q1: "Bring Guests",
+      q2: "The People",
+      q3: "Sunset Party",
+      q4: "Elegant & Upscale",
+      q5: "Small & Curated",
+      q6: "Yes, Absolutely",
+      // Household
+      q7: "Couple",
+      q8: "2",
+      q9: "No",
+      // Age
+      q10: "40–49",
+      q11: "Full-Time",
+      // Availability
+      q12: "Weekend Evenings",
+      q13: "2–3x / Month",
+      // Wellness (multi-select)
+      q14: "Yoga / Pilates,Walking Club,Meditation",
+      q15: "Intermediate",
+      // Lifestyle (multi-select)
+      q16: "Social Mixers,Live Music,Cooking / Cocktails",
+      q17: "A Mix",
+      // Pets
+      q18: "Dog(s)",
+      // Hobbies (multi-select)
+      q19: "Travel,Food & Wine,Reading",
+      // Communication
+      q20: "Email",
     });
     expect(result).toEqual({ success: true });
   });
 
-  it("accepts submission with empty email string", async () => {
+  it("accepts submission with conditional fields (children ages, pets other)", async () => {
     const caller = appRouter.createCaller(createPublicContext());
     const result = await caller.poll.submit({
-      email: "",
-      q0: "Wellness Focused",
+      q7: "Young Family",
+      q8: "4",
+      q9: "Yes",
+      q9Ages: "3, 7",
+      q18: "Other",
+      q18Other: "Parrot",
+    });
+    expect(result).toEqual({ success: true });
+  });
+
+  it("accepts submission without email", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    const result = await caller.poll.submit({
+      q0: "Luxury Lover",
     });
     expect(result).toEqual({ success: true });
   });
@@ -57,12 +98,20 @@ describe("analytics routes (public)", () => {
     expect(typeof result).toBe("number");
   });
 
-  it("admin.exportCsv returns CSV string with headers without auth", async () => {
+  it("admin.exportCsv returns CSV string with all headers", async () => {
     const caller = appRouter.createCaller(createPublicContext());
     const csv = await caller.admin.exportCsv();
     expect(typeof csv).toBe("string");
     expect(csv).toContain("ID");
     expect(csv).toContain("Email");
     expect(csv).toContain("How would friends describe you");
+    // New section headers
+    expect(csv).toContain("Household type");
+    expect(csv).toContain("Age range");
+    expect(csv).toContain("Most available");
+    expect(csv).toContain("Wellness interests");
+    expect(csv).toContain("Lifestyle interests");
+    expect(csv).toContain("Hobbies");
+    expect(csv).toContain("Notification preference");
   });
 });

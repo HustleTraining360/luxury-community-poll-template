@@ -1,6 +1,7 @@
 /**
  * Analytics Dashboard — Non-indexed PUBLIC page for viewing poll results
  * Fetches data from tRPC admin routes (no auth required)
+ * Handles all 21 questions including multi-select (comma-separated) answers
  * Route: /analytics (noindex via meta tag)
  */
 import { useEffect, useMemo } from "react";
@@ -17,7 +18,15 @@ import {
   PieChart,
   Pie,
 } from "recharts";
-import { ArrowLeft, Download, Users, BarChart3, Clock, Mail, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  Users,
+  BarChart3,
+  Clock,
+  Mail,
+  Loader2,
+} from "lucide-react";
 import { questions, questionLabels } from "@/lib/pollData";
 import { trpc } from "@/lib/trpc";
 
@@ -29,7 +38,23 @@ const CHART_COLORS = [
   "#8C6B4F",
   "#6E5540",
   "#D4B88C",
+  "#E0C89E",
+  "#C4A070",
+  "#9E7B55",
+  "#7A5F3E",
 ];
+
+/** All q-field keys in order, matching the DB columns */
+const Q_KEYS = [
+  "q0","q1","q2","q3","q4","q5","q6",
+  "q7","q8","q9",
+  "q10","q11",
+  "q12","q13",
+  "q14","q15",
+  "q16","q17",
+  "q18","q19",
+  "q20",
+] as const;
 
 export default function Analytics() {
   // Set noindex meta tag
@@ -47,52 +72,64 @@ export default function Analytics() {
   }, []);
 
   // Fetch data from tRPC routes (public — no auth required)
-  const { data: submissions, isLoading: subsLoading } = trpc.admin.submissions.useQuery();
+  const { data: submissions, isLoading: subsLoading } =
+    trpc.admin.submissions.useQuery();
   const { data: csvData } = trpc.admin.exportCsv.useQuery();
-
-  // Map submissions to the format used by the analytics UI
-  const responses = useMemo(() => {
-    if (!submissions) return [];
-    return submissions.map((s) => ({
-      id: s.id,
-      timestamp: s.createdAt ? new Date(s.createdAt).toISOString() : "",
-      email: s.email ?? "",
-      "0": s.q0 ?? "",
-      "1": s.q1 ?? "",
-      "2": s.q2 ?? "",
-      "3": s.q3 ?? "",
-      "4": s.q4 ?? "",
-      "5": s.q5 ?? "",
-      "6": s.q6 ?? "",
-    }));
-  }, [submissions]);
 
   // Compute analytics per question
   const questionAnalytics = useMemo(() => {
+    if (!submissions) return [];
+
     return questions.map((q, qIndex) => {
+      const isMultiSelect = q.multiSelect === true;
       const counts: Record<string, number> = {};
       q.options.forEach((opt) => {
         counts[opt.label] = 0;
       });
-      responses.forEach((r) => {
-        const answer = r[qIndex.toString() as keyof typeof r] as string;
-        if (answer && counts[answer] !== undefined) {
-          counts[answer]++;
+
+      const fieldKey = Q_KEYS[qIndex];
+
+      submissions.forEach((s: any) => {
+        const answer = s[fieldKey] as string | null;
+        if (!answer) return;
+
+        if (isMultiSelect) {
+          // Multi-select answers are comma-separated
+          answer.split(",").forEach((val) => {
+            const trimmed = val.trim();
+            if (counts[trimmed] !== undefined) {
+              counts[trimmed]++;
+            }
+          });
+        } else {
+          if (counts[answer] !== undefined) {
+            counts[answer]++;
+          }
         }
       });
+
       const data = Object.entries(counts)
         .map(([name, value]) => ({ name, value }))
         .sort((a, b) => b.value - a.value);
       const topAnswer = data[0]?.value > 0 ? data[0].name : "—";
-      return { headline: q.headline, label: questionLabels[qIndex], data, topAnswer };
+      return {
+        headline: q.headline,
+        section: q.section,
+        isMultiSelect,
+        data,
+        topAnswer,
+      };
     });
-  }, [responses]);
+  }, [submissions]);
 
-  const totalResponses = responses.length;
-  const emailCount = responses.filter((r) => r.email && r.email.trim() !== "").length;
+  const totalResponses = submissions?.length ?? 0;
+  const emailCount =
+    submissions?.filter(
+      (s: any) => s.email && s.email.trim() !== ""
+    ).length ?? 0;
   const latestResponse =
-    responses.length > 0
-      ? new Date(responses[0].timestamp).toLocaleString()
+    submissions && submissions.length > 0
+      ? new Date((submissions[0] as any).createdAt).toLocaleString()
       : "—";
 
   // CSV download from server
@@ -111,7 +148,10 @@ export default function Analytics() {
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const d = payload[0].payload;
-      const pct = totalResponses > 0 ? ((d.value / totalResponses) * 100).toFixed(1) : "0";
+      const pct =
+        totalResponses > 0
+          ? ((d.value / totalResponses) * 100).toFixed(1)
+          : "0";
       return (
         <div className="bg-white border border-border rounded-xl px-4 py-3 shadow-lg">
           <p className="text-sm font-medium text-charcoal">{d.name}</p>
@@ -135,6 +175,18 @@ export default function Analytics() {
       </div>
     );
   }
+
+  // Group questions by section for visual separation
+  const sections: { name: string; indices: number[] }[] = [];
+  let currentSection = "";
+  questions.forEach((q, i) => {
+    if (q.section !== currentSection) {
+      currentSection = q.section;
+      sections.push({ name: currentSection, indices: [i] });
+    } else {
+      sections[sections.length - 1].indices.push(i);
+    }
+  });
 
   return (
     <div className="min-h-dvh bg-cream">
@@ -207,211 +259,216 @@ export default function Analytics() {
             transition={{ delay: 0.3 }}
           >
             <BarChart3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="font-serif text-xl text-charcoal mb-2">No responses yet</p>
+            <p className="font-serif text-xl text-charcoal mb-2">
+              No responses yet
+            </p>
             <p className="text-sm text-muted-foreground">
-              Share the poll link with your community to start collecting responses.
+              Share the poll link with your community to start collecting
+              responses.
             </p>
           </motion.div>
         )}
 
-        {/* Question Breakdown Cards */}
+        {/* Question Breakdown Cards — grouped by section */}
         {totalResponses > 0 && (
-          <div className="space-y-8">
-            {questionAnalytics.map((qa, idx) => (
-              <motion.div
-                key={idx}
-                className="bg-white rounded-2xl border border-border/60 overflow-hidden shadow-sm"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 * idx }}
-              >
-                {/* Card Header */}
-                <div className="px-6 pt-6 pb-4 border-b border-border/40">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-[0.7rem] font-medium tracking-[0.1em] uppercase text-gold mb-1.5">
-                        Question {idx + 1} of {questions.length}
-                      </p>
-                      <h3 className="font-serif text-lg font-semibold text-charcoal">
-                        {qa.headline}
-                      </h3>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/60 mb-0.5">
-                        Top Answer
-                      </p>
-                      <p className="text-sm font-medium text-gold">{qa.topAnswer}</p>
-                    </div>
-                  </div>
+          <div className="space-y-10">
+            {sections.map((section) => (
+              <div key={section.name}>
+                {/* Section Header */}
+                <div className="mb-5 flex items-center gap-3">
+                  <div
+                    className="h-px flex-1"
+                    style={{ backgroundColor: "rgba(201,169,110,0.3)" }}
+                  />
+                  <span className="text-[0.7rem] font-medium tracking-[0.15em] uppercase text-gold shrink-0">
+                    {section.name}
+                  </span>
+                  <div
+                    className="h-px flex-1"
+                    style={{ backgroundColor: "rgba(201,169,110,0.3)" }}
+                  />
                 </div>
 
-                {/* Chart + Table */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-0">
-                  {/* Bar Chart */}
-                  <div className="px-6 py-6">
-                    <ResponsiveContainer width="100%" height={Math.max(200, qa.data.length * 44)}>
-                      <BarChart
-                        data={qa.data}
-                        layout="vertical"
-                        margin={{ top: 0, right: 20, bottom: 0, left: 0 }}
-                        barCategoryGap="20%"
+                <div className="space-y-8">
+                  {section.indices.map((idx) => {
+                    const qa = questionAnalytics[idx];
+                    if (!qa) return null;
+                    return (
+                      <motion.div
+                        key={idx}
+                        className="bg-white rounded-2xl border border-border/60 overflow-hidden shadow-sm"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.05 * idx }}
                       >
-                        <XAxis type="number" hide />
-                        <YAxis
-                          dataKey="name"
-                          type="category"
-                          width={130}
-                          tick={{ fontSize: 12, fill: "#6B6B6B" }}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <Tooltip content={<CustomTooltip />} cursor={false} />
-                        <Bar dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={28}>
-                          {qa.data.map((_, i) => (
-                            <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  {/* Pie Chart + Table */}
-                  <div className="px-6 py-6 border-t lg:border-t-0 lg:border-l border-border/40">
-                    <div className="flex items-center justify-center mb-4">
-                      <ResponsiveContainer width={160} height={160}>
-                        <PieChart>
-                          <Pie
-                            data={qa.data.filter((d) => d.value > 0)}
-                            dataKey="value"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={40}
-                            outerRadius={70}
-                            strokeWidth={2}
-                            stroke="#FAF7F2"
-                          >
-                            {qa.data
-                              .filter((d) => d.value > 0)
-                              .map((_, i) => (
-                                <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                              ))}
-                          </Pie>
-                          <Tooltip content={<CustomTooltip />} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    {/* Data Table */}
-                    <div className="space-y-2">
-                      {qa.data.map((d, i) => {
-                        const pct =
-                          totalResponses > 0
-                            ? ((d.value / totalResponses) * 100).toFixed(1)
-                            : "0";
-                        return (
-                          <div key={d.name} className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2.5">
-                              <div
-                                className="w-3 h-3 rounded-sm shrink-0"
-                                style={{
-                                  backgroundColor: CHART_COLORS[i % CHART_COLORS.length],
-                                }}
-                              />
-                              <span className="text-charcoal truncate max-w-[140px]">
-                                {d.name}
-                              </span>
+                        {/* Card Header */}
+                        <div className="px-6 pt-6 pb-4 border-b border-border/40">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-[0.7rem] font-medium tracking-[0.1em] uppercase text-gold mb-1.5">
+                                Question {idx + 1} of {questions.length}
+                                {qa.isMultiSelect && (
+                                  <span className="ml-2 text-muted-foreground/60">
+                                    (multi-select)
+                                  </span>
+                                )}
+                              </p>
+                              <h3 className="font-serif text-lg font-semibold text-charcoal">
+                                {qa.headline}
+                              </h3>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-muted-foreground tabular-nums">{d.value}</span>
-                              <span className="text-muted-foreground/60 text-xs tabular-nums w-12 text-right">
-                                {pct}%
-                              </span>
+                            <div className="text-right shrink-0">
+                              <p className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/60 mb-0.5">
+                                Top Answer
+                              </p>
+                              <p className="text-sm font-medium text-gold">
+                                {qa.topAnswer}
+                              </p>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                        </div>
+
+                        {/* Chart + Table */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+                          {/* Bar Chart */}
+                          <div className="px-6 py-6">
+                            <ResponsiveContainer
+                              width="100%"
+                              height={Math.max(200, qa.data.length * 44)}
+                            >
+                              <BarChart
+                                data={qa.data}
+                                layout="vertical"
+                                margin={{
+                                  top: 0,
+                                  right: 20,
+                                  bottom: 0,
+                                  left: 0,
+                                }}
+                                barCategoryGap="20%"
+                              >
+                                <XAxis type="number" hide />
+                                <YAxis
+                                  dataKey="name"
+                                  type="category"
+                                  width={130}
+                                  tick={{ fontSize: 12, fill: "#6B6B6B" }}
+                                  axisLine={false}
+                                  tickLine={false}
+                                />
+                                <Tooltip
+                                  content={<CustomTooltip />}
+                                  cursor={false}
+                                />
+                                <Bar
+                                  dataKey="value"
+                                  radius={[0, 6, 6, 0]}
+                                  maxBarSize={28}
+                                >
+                                  {qa.data.map((_, i) => (
+                                    <Cell
+                                      key={i}
+                                      fill={
+                                        CHART_COLORS[i % CHART_COLORS.length]
+                                      }
+                                    />
+                                  ))}
+                                </Bar>
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+
+                          {/* Pie Chart + Table */}
+                          <div className="px-6 py-6 border-t lg:border-t-0 lg:border-l border-border/40">
+                            <div className="flex items-center justify-center mb-4">
+                              <ResponsiveContainer width={160} height={160}>
+                                <PieChart>
+                                  <Pie
+                                    data={qa.data.filter((d) => d.value > 0)}
+                                    dataKey="value"
+                                    nameKey="name"
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={40}
+                                    outerRadius={70}
+                                    strokeWidth={2}
+                                    stroke="#FAF7F2"
+                                  >
+                                    {qa.data
+                                      .filter((d) => d.value > 0)
+                                      .map((_, i) => (
+                                        <Cell
+                                          key={i}
+                                          fill={
+                                            CHART_COLORS[
+                                              i % CHART_COLORS.length
+                                            ]
+                                          }
+                                        />
+                                      ))}
+                                  </Pie>
+                                  <Tooltip content={<CustomTooltip />} />
+                                </PieChart>
+                              </ResponsiveContainer>
+                            </div>
+
+                            {/* Data Table */}
+                            <div className="space-y-2">
+                              {qa.data.map((d, i) => {
+                                const pct =
+                                  totalResponses > 0
+                                    ? (
+                                        (d.value / totalResponses) *
+                                        100
+                                      ).toFixed(1)
+                                    : "0";
+                                return (
+                                  <div
+                                    key={d.name}
+                                    className="flex items-center justify-between text-sm"
+                                  >
+                                    <div className="flex items-center gap-2.5">
+                                      <div
+                                        className="w-3 h-3 rounded-sm shrink-0"
+                                        style={{
+                                          backgroundColor:
+                                            CHART_COLORS[
+                                              i % CHART_COLORS.length
+                                            ],
+                                        }}
+                                      />
+                                      <span className="text-charcoal truncate max-w-[140px]">
+                                        {d.name}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-muted-foreground tabular-nums">
+                                        {d.value}
+                                      </span>
+                                      <span className="text-muted-foreground/60 text-xs tabular-nums w-12 text-right">
+                                        {pct}%
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
-        )}
-
-        {/* Response Log */}
-        {totalResponses > 0 && (
-          <motion.div
-            className="mt-12 bg-white rounded-2xl border border-border/60 overflow-hidden shadow-sm"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.8 }}
-          >
-            <div className="px-6 pt-6 pb-4 border-b border-border/40">
-              <h3 className="font-serif text-lg font-semibold text-charcoal">
-                Response Log
-              </h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                Individual responses in chronological order
-              </p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border/40 bg-cream/50">
-                    <th className="text-left px-4 py-3 text-[0.7rem] font-medium tracking-wider uppercase text-muted-foreground/70">
-                      #
-                    </th>
-                    <th className="text-left px-4 py-3 text-[0.7rem] font-medium tracking-wider uppercase text-muted-foreground/70">
-                      Time
-                    </th>
-                    <th className="text-left px-4 py-3 text-[0.7rem] font-medium tracking-wider uppercase text-muted-foreground/70">
-                      Email
-                    </th>
-                    {questionLabels.map((_, i) => (
-                      <th
-                        key={i}
-                        className="text-left px-4 py-3 text-[0.7rem] font-medium tracking-wider uppercase text-muted-foreground/70 whitespace-nowrap"
-                      >
-                        Q{i + 1}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {responses.map((r, idx) => (
-                    <tr
-                      key={r.id}
-                      className="border-b border-border/20 hover:bg-cream/30 transition-colors"
-                    >
-                      <td className="px-4 py-3 text-muted-foreground tabular-nums">
-                        {idx + 1}
-                      </td>
-                      <td className="px-4 py-3 text-charcoal whitespace-nowrap">
-                        {new Date(r.timestamp).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 text-charcoal">
-                        {r.email || (
-                          <span className="text-muted-foreground/40 italic">none</span>
-                        )}
-                      </td>
-                      {questionLabels.map((_, i) => (
-                        <td key={i} className="px-4 py-3 text-charcoal whitespace-nowrap">
-                          {(r[i.toString() as keyof typeof r] as string) || "—"}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </motion.div>
         )}
 
         {/* Footer */}
         <div className="text-center mt-12 pb-8">
           <p className="text-xs text-muted-foreground/50">
-            Data stored securely in the database. Export CSV to download a local copy.
+            Data stored securely in the database. Export CSV to download a local
+            copy.
           </p>
         </div>
       </main>
