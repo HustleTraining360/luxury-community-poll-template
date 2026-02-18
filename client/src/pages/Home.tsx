@@ -1,7 +1,8 @@
 /**
  * Home — Main poll page orchestrating welcome → questions → thank you
  * Design: Editorial Minimalism — full-viewport screens, smooth transitions
- * Cream background with subtle radial gold accents
+ * Welcome screen: full-bleed background image, light text
+ * Question/ThankYou screens: cream background with subtle gold accents
  */
 import { useState, useCallback, useRef } from "react";
 import { AnimatePresence } from "framer-motion";
@@ -73,28 +74,32 @@ export default function Home() {
     }
   }, [currentQuestion]);
 
+  const isWelcome = screen === "welcome";
+
   return (
-    <div className="min-h-dvh bg-cream relative overflow-hidden">
-      {/* Subtle background radial accents */}
-      <div
-        className="fixed inset-0 pointer-events-none z-0"
-        style={{
-          background:
-            "radial-gradient(circle at 20% 80%, rgba(201,169,110,0.04) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(201,169,110,0.03) 0%, transparent 50%)",
-        }}
-      />
+    <div className="min-h-dvh relative overflow-hidden" style={{ backgroundColor: isWelcome ? "#1a1a1a" : undefined }}>
+      {/* Subtle background radial accents — only on non-welcome screens */}
+      {!isWelcome && (
+        <div
+          className="fixed inset-0 pointer-events-none z-0 bg-cream"
+          style={{
+            background:
+              "radial-gradient(circle at 20% 80%, rgba(201,169,110,0.04) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(201,169,110,0.03) 0%, transparent 50%)",
+          }}
+        />
+      )}
 
       {/* Progress Bar */}
       <ProgressBar progress={progress} />
 
       {/* Main Content */}
-      <div className="relative z-10 w-full max-w-[520px] mx-auto min-h-dvh">
-        <AnimatePresence mode="wait" initial={false}>
-          {screen === "welcome" && (
-            <WelcomeScreen key="welcome" onStart={handleStart} />
-          )}
+      <AnimatePresence mode="wait" initial={false}>
+        {screen === "welcome" && (
+          <WelcomeScreen key="welcome" onStart={handleStart} />
+        )}
 
-          {screen === "question" && (
+        {screen === "question" && (
+          <div className="relative z-10 w-full max-w-[520px] mx-auto min-h-dvh">
             <QuestionScreen
               key={`q-${currentQuestion}`}
               question={questions[currentQuestion]}
@@ -106,13 +111,15 @@ export default function Home() {
               onBack={handleBack}
               direction={direction}
             />
-          )}
+          </div>
+        )}
 
-          {screen === "thankyou" && (
+        {screen === "thankyou" && (
+          <div className="relative z-10 w-full max-w-[520px] mx-auto min-h-dvh">
             <ThankYouScreen key="thankyou" answers={answers} />
-          )}
-        </AnimatePresence>
-      </div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
