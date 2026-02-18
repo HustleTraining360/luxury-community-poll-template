@@ -39,3 +39,6 @@
 - [x] Write/update vitest tests for new backend routes
 - [x] Test full flow end-to-end
 - [x] Save checkpoint and deliver
+
+## Analytics UI Improvement
+- [x] Replace "Question X of 21" labels with reactive progress bars on analytics dashboard

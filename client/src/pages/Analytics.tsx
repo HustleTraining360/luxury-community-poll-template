@@ -301,22 +301,33 @@ export default function Analytics() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.05 * idx }}
                       >
-                        {/* Card Header */}
-                        <div className="px-6 pt-6 pb-4 border-b border-border/40">
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <p className="text-[0.7rem] font-medium tracking-[0.1em] uppercase text-gold mb-1.5">
-                                Question {idx + 1} of {questions.length}
-                                {qa.isMultiSelect && (
-                                  <span className="ml-2 text-muted-foreground/60">
-                                    (multi-select)
-                                  </span>
-                                )}
-                              </p>
-                              <h3 className="font-serif text-lg font-semibold text-charcoal">
-                                {qa.headline}
-                              </h3>
+                        {/* Card Header with Progress Bar */}
+                        <div className="px-6 pt-5 pb-4 border-b border-border/40">
+                          {/* Progress bar */}
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="flex-1 h-1.5 bg-border/30 rounded-full overflow-hidden">
+                              <motion.div
+                                className="h-full rounded-full"
+                                style={{ backgroundColor: "#C9A96E" }}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${((idx + 1) / questions.length) * 100}%` }}
+                                transition={{ duration: 0.8, delay: 0.1 * idx, ease: "easeOut" }}
+                              />
                             </div>
+                            <span className="text-[0.65rem] font-medium tabular-nums text-muted-foreground/60 shrink-0">
+                              {idx + 1}/{questions.length}
+                            </span>
+                            {qa.isMultiSelect && (
+                              <span className="text-[0.6rem] font-medium tracking-[0.08em] uppercase text-muted-foreground/50 bg-border/20 rounded-full px-2 py-0.5">
+                                multi-select
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-start justify-between gap-4">
+                            <h3 className="font-serif text-lg font-semibold text-charcoal">
+                              {qa.headline}
+                            </h3>
                             <div className="text-right shrink-0">
                               <p className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/60 mb-0.5">
                                 Top Answer
