@@ -10,42 +10,6 @@ function createPublicContext(): TrpcContext {
   };
 }
 
-function createAdminContext(): TrpcContext {
-  return {
-    user: {
-      id: 1,
-      openId: "owner-123",
-      email: "admin@example.com",
-      name: "Admin",
-      loginMethod: "manus",
-      role: "admin",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      lastSignedIn: new Date(),
-    },
-    req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: () => {} } as unknown as TrpcContext["res"],
-  };
-}
-
-function createUserContext(): TrpcContext {
-  return {
-    user: {
-      id: 2,
-      openId: "user-456",
-      email: "user@example.com",
-      name: "Regular User",
-      loginMethod: "manus",
-      role: "user",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      lastSignedIn: new Date(),
-    },
-    req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: () => {} } as unknown as TrpcContext["res"],
-  };
-}
-
 describe("poll.submit", () => {
   it("accepts valid submission with all fields", async () => {
     const caller = appRouter.createCaller(createPublicContext());
@@ -80,35 +44,25 @@ describe("poll.submit", () => {
   });
 });
 
-describe("admin routes", () => {
-  it("admin.submissions returns array", async () => {
-    const caller = appRouter.createCaller(createAdminContext());
+describe("analytics routes (public)", () => {
+  it("admin.submissions returns array without auth", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
     const result = await caller.admin.submissions();
     expect(Array.isArray(result)).toBe(true);
   });
 
-  it("admin.submissionCount returns a number", async () => {
-    const caller = appRouter.createCaller(createAdminContext());
+  it("admin.submissionCount returns a number without auth", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
     const result = await caller.admin.submissionCount();
     expect(typeof result).toBe("number");
   });
 
-  it("admin.exportCsv returns CSV string with headers", async () => {
-    const caller = appRouter.createCaller(createAdminContext());
+  it("admin.exportCsv returns CSV string with headers without auth", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
     const csv = await caller.admin.exportCsv();
     expect(typeof csv).toBe("string");
     expect(csv).toContain("ID");
     expect(csv).toContain("Email");
     expect(csv).toContain("How would friends describe you");
-  });
-
-  it("rejects non-admin users from admin.submissions", async () => {
-    const caller = appRouter.createCaller(createUserContext());
-    await expect(caller.admin.submissions()).rejects.toThrow();
-  });
-
-  it("rejects unauthenticated users from admin.submissions", async () => {
-    const caller = appRouter.createCaller(createPublicContext());
-    await expect(caller.admin.submissions()).rejects.toThrow();
   });
 });

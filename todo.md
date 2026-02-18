@@ -13,3 +13,9 @@
 - [x] Add haptic feedback (navigator.vibrate) on OptionCard tap
 - [x] Test full flow end-to-end
 - [x] Save checkpoint and deliver
+
+## Analytics Public Access
+- [x] Make backend admin routes public (use publicProcedure instead of protectedProcedure)
+- [x] Remove login gate from Analytics frontend page
+- [x] Keep noindex/nofollow meta tag on Analytics page
+- [x] Test analytics page loads without login

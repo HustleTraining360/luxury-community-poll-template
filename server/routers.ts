@@ -1,7 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router, adminProcedure } from "./_core/trpc";
+import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import {
   createPollSubmission,
@@ -49,18 +49,18 @@ export const appRouter = router({
   }),
 
   admin: router({
-    /** Admin only: get all submissions */
-    submissions: adminProcedure.query(async () => {
+    /** Public: get all submissions (analytics dashboard) */
+    submissions: publicProcedure.query(async () => {
       return getAllPollSubmissions();
     }),
 
-    /** Admin only: get submission count */
-    submissionCount: adminProcedure.query(async () => {
+    /** Public: get submission count */
+    submissionCount: publicProcedure.query(async () => {
       return getPollSubmissionCount();
     }),
 
-    /** Admin only: export CSV string */
-    exportCsv: adminProcedure.query(async () => {
+    /** Public: export CSV string */
+    exportCsv: publicProcedure.query(async () => {
       const rows = await getAllPollSubmissions();
       const headers = [
         "ID",

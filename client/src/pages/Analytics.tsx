@@ -1,6 +1,6 @@
 /**
- * Analytics Dashboard — Non-indexed admin page for viewing poll results
- * Fetches data from tRPC admin routes (requires admin auth)
+ * Analytics Dashboard — Non-indexed PUBLIC page for viewing poll results
+ * Fetches data from tRPC admin routes (no auth required)
  * Route: /analytics (noindex via meta tag)
  */
 import { useEffect, useMemo } from "react";
@@ -17,11 +17,9 @@ import {
   PieChart,
   Pie,
 } from "recharts";
-import { ArrowLeft, Download, Users, BarChart3, Clock, Mail, Loader2, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Download, Users, BarChart3, Clock, Mail, Loader2 } from "lucide-react";
 import { questions, questionLabels } from "@/lib/pollData";
 import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 
 // Gold-toned palette for charts
 const CHART_COLORS = [
@@ -34,8 +32,6 @@ const CHART_COLORS = [
 ];
 
 export default function Analytics() {
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
-
   // Set noindex meta tag
   useEffect(() => {
     const meta = document.createElement("meta");
@@ -50,16 +46,9 @@ export default function Analytics() {
     };
   }, []);
 
-  const isAdmin = user?.role === "admin";
-
-  // Fetch data from tRPC admin routes (only when admin)
-  const { data: submissions, isLoading: subsLoading } = trpc.admin.submissions.useQuery(
-    undefined,
-    { enabled: isAdmin }
-  );
-  const { data: csvData } = trpc.admin.exportCsv.useQuery(undefined, {
-    enabled: isAdmin,
-  });
+  // Fetch data from tRPC routes (public — no auth required)
+  const { data: submissions, isLoading: subsLoading } = trpc.admin.submissions.useQuery();
+  const { data: csvData } = trpc.admin.exportCsv.useQuery();
 
   // Map submissions to the format used by the analytics UI
   const responses = useMemo(() => {
@@ -135,58 +124,7 @@ export default function Analytics() {
     return null;
   };
 
-  // Auth loading state
-  if (authLoading) {
-    return (
-      <div className="min-h-dvh bg-cream flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-gold animate-spin" />
-      </div>
-    );
-  }
-
-  // Not logged in
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-dvh bg-cream flex flex-col items-center justify-center text-center px-6">
-        <ShieldAlert className="w-12 h-12 text-muted-foreground/40 mb-4" />
-        <h2 className="font-serif text-2xl font-semibold text-charcoal mb-3">
-          Sign In Required
-        </h2>
-        <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-          You need to sign in as an admin to view the analytics dashboard.
-        </p>
-        <a
-          href={getLoginUrl()}
-          className="inline-flex items-center gap-2 bg-charcoal text-cream px-8 py-3 rounded-full text-sm font-medium tracking-wider uppercase hover:bg-charcoal-deep transition-colors"
-        >
-          Sign In
-        </a>
-        <Link href="/" className="mt-4 text-sm text-muted-foreground hover:text-gold transition-colors">
-          Back to Poll
-        </Link>
-      </div>
-    );
-  }
-
-  // Not admin
-  if (!isAdmin) {
-    return (
-      <div className="min-h-dvh bg-cream flex flex-col items-center justify-center text-center px-6">
-        <ShieldAlert className="w-12 h-12 text-muted-foreground/40 mb-4" />
-        <h2 className="font-serif text-2xl font-semibold text-charcoal mb-3">
-          Access Denied
-        </h2>
-        <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-          Only administrators can view the analytics dashboard.
-        </p>
-        <Link href="/" className="text-sm text-muted-foreground hover:text-gold transition-colors">
-          Back to Poll
-        </Link>
-      </div>
-    );
-  }
-
-  // Data loading
+  // Data loading state
   if (subsLoading) {
     return (
       <div className="min-h-dvh bg-cream flex items-center justify-center">
@@ -294,7 +232,7 @@ export default function Analytics() {
                       <p className="text-[0.7rem] font-medium tracking-[0.1em] uppercase text-gold mb-1.5">
                         Question {idx + 1} of {questions.length}
                       </p>
-                      <h3 className="font-serif text-lg sm:text-xl font-semibold text-charcoal leading-tight">
+                      <h3 className="font-serif text-lg font-semibold text-charcoal">
                         {qa.headline}
                       </h3>
                     </div>
