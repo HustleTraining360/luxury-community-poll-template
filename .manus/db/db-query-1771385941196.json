@@ -1,0 +1,70 @@
+{
+  "query": "SELECT * FROM poll_submissions ORDER BY id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3BRKCepuS8iUV56.c31fe119bb28 --database BWHz55AK6qohH5qvS9sacQ --execute SELECT * FROM poll_submissions ORDER BY id DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "7",
+      "email": "test@highpointe.com",
+      "q0": "Social Connector",
+      "q1": "Bring Guests",
+      "q2": "The Amenities",
+      "q3": "Sunset Party",
+      "q4": "Elegant & Upscale",
+      "q5": "Small & Curated",
+      "q6": "Yes, Absolutely",
+      "createdAt": "2026-02-18 03:38:44"
+    },
+    {
+      "id": "6",
+      "email": "NULL",
+      "q0": "Wellness Focused",
+      "q1": "NULL",
+      "q2": "NULL",
+      "q3": "NULL",
+      "q4": "NULL",
+      "q5": "NULL",
+      "q6": "NULL",
+      "createdAt": "2026-02-18 03:36:21"
+    },
+    {
+      "id": "5",
+      "email": "NULL",
+      "q0": "Luxury Lover",
+      "q1": "NULL",
+      "q2": "NULL",
+      "q3": "NULL",
+      "q4": "NULL",
+      "q5": "NULL",
+      "q6": "NULL",
+      "createdAt": "2026-02-18 03:36:21"
+    },
+    {
+      "id": "4",
+      "email": "test@example.com",
+      "q0": "Social Connector",
+      "q1": "Bring Guests",
+      "q2": "The People",
+      "q3": "Private Chef Night",
+      "q4": "Elegant & Upscale",
+      "q5": "Small & Curated",
+      "q6": "Yes, Absolutely",
+      "createdAt": "2026-02-18 03:36:21"
+    },
+    {
+      "id": "3",
+      "email": "NULL",
+      "q0": "Wellness Focused",
+      "q1": "NULL",
+      "q2": "NULL",
+      "q3": "NULL",
+      "q4": "NULL",
+      "q5": "NULL",
+      "q6": "NULL",
+      "createdAt": "2026-02-18 03:33:40"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tq0\tq1\tq2\tq3\tq4\tq5\tq6\tcreatedAt\n7\ttest@highpointe.com\tSocial Connector\tBring Guests\tThe Amenities\tSunset Party\tElegant & Upscale\tSmall & Curated\tYes, Absolutely\t2026-02-18 03:38:44\n6\tNULL\tWellness Focused\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-02-18 03:36:21\n5\tNULL\tLuxury Lover\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-02-18 03:36:21\n4\ttest@example.com\tSocial Connector\tBring Guests\tThe People\tPrivate Chef Night\tElegant & Upscale\tSmall & Curated\tYes, Absolutely\t2026-02-18 03:36:21\n3\tNULL\tWellness Focused\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-02-18 03:33:40\n",
+  "stderr": "",
+  "execution_time_ms": 104
+}

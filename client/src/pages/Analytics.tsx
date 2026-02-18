@@ -1,10 +1,9 @@
 /**
- * Analytics Dashboard — Non-indexed public page for viewing poll results
- * Design: Editorial Minimalism — cream bg, charcoal text, gold accents
- * Reads from localStorage "luxuryPollResponses"
- * Route: /analytics (noindex via React Helmet-style meta)
+ * Analytics Dashboard — Non-indexed admin page for viewing poll results
+ * Fetches data from tRPC admin routes (requires admin auth)
+ * Route: /analytics (noindex via meta tag)
  */
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import {
@@ -18,14 +17,11 @@ import {
   PieChart,
   Pie,
 } from "recharts";
-import { ArrowLeft, Download, Users, BarChart3, Clock, Mail } from "lucide-react";
+import { ArrowLeft, Download, Users, BarChart3, Clock, Mail, Loader2, ShieldAlert } from "lucide-react";
 import { questions, questionLabels } from "@/lib/pollData";
-
-interface StoredResponse {
-  timestamp: string;
-  email: string;
-  [key: string]: string;
-}
+import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { getLoginUrl } from "@/const";
 
 // Gold-toned palette for charts
 const CHART_COLORS = [
@@ -38,7 +34,7 @@ const CHART_COLORS = [
 ];
 
 export default function Analytics() {
-  const [responses, setResponses] = useState<StoredResponse[]>([]);
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
 
   // Set noindex meta tag
   useEffect(() => {
@@ -46,23 +42,41 @@ export default function Analytics() {
     meta.name = "robots";
     meta.content = "noindex, nofollow";
     document.head.appendChild(meta);
-
     const title = document.title;
     document.title = "Poll Analytics — Dashboard";
-
     return () => {
       document.head.removeChild(meta);
       document.title = title;
     };
   }, []);
 
-  // Load responses from localStorage
-  useEffect(() => {
-    const stored = JSON.parse(
-      localStorage.getItem("luxuryPollResponses") || "[]"
-    );
-    setResponses(stored);
-  }, []);
+  const isAdmin = user?.role === "admin";
+
+  // Fetch data from tRPC admin routes (only when admin)
+  const { data: submissions, isLoading: subsLoading } = trpc.admin.submissions.useQuery(
+    undefined,
+    { enabled: isAdmin }
+  );
+  const { data: csvData } = trpc.admin.exportCsv.useQuery(undefined, {
+    enabled: isAdmin,
+  });
+
+  // Map submissions to the format used by the analytics UI
+  const responses = useMemo(() => {
+    if (!submissions) return [];
+    return submissions.map((s) => ({
+      id: s.id,
+      timestamp: s.createdAt ? new Date(s.createdAt).toISOString() : "",
+      email: s.email ?? "",
+      "0": s.q0 ?? "",
+      "1": s.q1 ?? "",
+      "2": s.q2 ?? "",
+      "3": s.q3 ?? "",
+      "4": s.q4 ?? "",
+      "5": s.q5 ?? "",
+      "6": s.q6 ?? "",
+    }));
+  }, [submissions]);
 
   // Compute analytics per question
   const questionAnalytics = useMemo(() => {
@@ -71,51 +85,31 @@ export default function Analytics() {
       q.options.forEach((opt) => {
         counts[opt.label] = 0;
       });
-
       responses.forEach((r) => {
-        const answer = r[qIndex.toString()];
+        const answer = r[qIndex.toString() as keyof typeof r] as string;
         if (answer && counts[answer] !== undefined) {
           counts[answer]++;
         }
       });
-
       const data = Object.entries(counts)
         .map(([name, value]) => ({ name, value }))
         .sort((a, b) => b.value - a.value);
-
       const topAnswer = data[0]?.value > 0 ? data[0].name : "—";
-
-      return {
-        headline: q.headline,
-        label: questionLabels[qIndex],
-        data,
-        topAnswer,
-      };
+      return { headline: q.headline, label: questionLabels[qIndex], data, topAnswer };
     });
   }, [responses]);
 
-  // Summary stats
   const totalResponses = responses.length;
   const emailCount = responses.filter((r) => r.email && r.email.trim() !== "").length;
-  const latestResponse = responses.length > 0
-    ? new Date(responses[responses.length - 1].timestamp).toLocaleString()
-    : "—";
+  const latestResponse =
+    responses.length > 0
+      ? new Date(responses[0].timestamp).toLocaleString()
+      : "—";
 
-  // CSV download
+  // CSV download from server
   const downloadCSV = () => {
-    if (responses.length === 0) return;
-    const headers = ["Timestamp", "Email", ...questionLabels];
-    const rows = responses.map((r) => {
-      return [
-        r.timestamp,
-        r.email,
-        ...questionLabels.map((_, i) => r[i.toString()] || ""),
-      ]
-        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-        .join(",");
-    });
-    const csv = [headers.join(","), ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
+    if (!csvData) return;
+    const blob = new Blob([csvData], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -141,6 +135,69 @@ export default function Analytics() {
     return null;
   };
 
+  // Auth loading state
+  if (authLoading) {
+    return (
+      <div className="min-h-dvh bg-cream flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-gold animate-spin" />
+      </div>
+    );
+  }
+
+  // Not logged in
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-dvh bg-cream flex flex-col items-center justify-center text-center px-6">
+        <ShieldAlert className="w-12 h-12 text-muted-foreground/40 mb-4" />
+        <h2 className="font-serif text-2xl font-semibold text-charcoal mb-3">
+          Sign In Required
+        </h2>
+        <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+          You need to sign in as an admin to view the analytics dashboard.
+        </p>
+        <a
+          href={getLoginUrl()}
+          className="inline-flex items-center gap-2 bg-charcoal text-cream px-8 py-3 rounded-full text-sm font-medium tracking-wider uppercase hover:bg-charcoal-deep transition-colors"
+        >
+          Sign In
+        </a>
+        <Link href="/" className="mt-4 text-sm text-muted-foreground hover:text-gold transition-colors">
+          Back to Poll
+        </Link>
+      </div>
+    );
+  }
+
+  // Not admin
+  if (!isAdmin) {
+    return (
+      <div className="min-h-dvh bg-cream flex flex-col items-center justify-center text-center px-6">
+        <ShieldAlert className="w-12 h-12 text-muted-foreground/40 mb-4" />
+        <h2 className="font-serif text-2xl font-semibold text-charcoal mb-3">
+          Access Denied
+        </h2>
+        <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+          Only administrators can view the analytics dashboard.
+        </p>
+        <Link href="/" className="text-sm text-muted-foreground hover:text-gold transition-colors">
+          Back to Poll
+        </Link>
+      </div>
+    );
+  }
+
+  // Data loading
+  if (subsLoading) {
+    return (
+      <div className="min-h-dvh bg-cream flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-gold animate-spin" />
+          <p className="text-sm text-muted-foreground">Loading analytics…</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-dvh bg-cream">
       {/* Header */}
@@ -162,7 +219,7 @@ export default function Analytics() {
 
           <motion.button
             onClick={downloadCSV}
-            disabled={responses.length === 0}
+            disabled={totalResponses === 0}
             className="inline-flex items-center gap-2 text-sm text-charcoal bg-white border border-border rounded-full px-4 py-2 hover:border-gold hover:text-gold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             whileTap={{ scale: 0.97 }}
           >
@@ -214,7 +271,7 @@ export default function Analytics() {
             <BarChart3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
             <p className="font-serif text-xl text-charcoal mb-2">No responses yet</p>
             <p className="text-sm text-muted-foreground">
-              Complete the poll to see analytics here.
+              Share the poll link with your community to start collecting responses.
             </p>
           </motion.div>
         )}
@@ -273,10 +330,7 @@ export default function Analytics() {
                         <Tooltip content={<CustomTooltip />} cursor={false} />
                         <Bar dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={28}>
                           {qa.data.map((_, i) => (
-                            <Cell
-                              key={i}
-                              fill={CHART_COLORS[i % CHART_COLORS.length]}
-                            />
+                            <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                           ))}
                         </Bar>
                       </BarChart>
@@ -302,10 +356,7 @@ export default function Analytics() {
                             {qa.data
                               .filter((d) => d.value > 0)
                               .map((_, i) => (
-                                <Cell
-                                  key={i}
-                                  fill={CHART_COLORS[i % CHART_COLORS.length]}
-                                />
+                                <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                               ))}
                           </Pie>
                           <Tooltip content={<CustomTooltip />} />
@@ -321,16 +372,12 @@ export default function Analytics() {
                             ? ((d.value / totalResponses) * 100).toFixed(1)
                             : "0";
                         return (
-                          <div
-                            key={d.name}
-                            className="flex items-center justify-between text-sm"
-                          >
+                          <div key={d.name} className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2.5">
                               <div
                                 className="w-3 h-3 rounded-sm shrink-0"
                                 style={{
-                                  backgroundColor:
-                                    CHART_COLORS[i % CHART_COLORS.length],
+                                  backgroundColor: CHART_COLORS[i % CHART_COLORS.length],
                                 }}
                               />
                               <span className="text-charcoal truncate max-w-[140px]">
@@ -338,9 +385,7 @@ export default function Analytics() {
                               </span>
                             </div>
                             <div className="flex items-center gap-3">
-                              <span className="text-muted-foreground tabular-nums">
-                                {d.value}
-                              </span>
+                              <span className="text-muted-foreground tabular-nums">{d.value}</span>
                               <span className="text-muted-foreground/60 text-xs tabular-nums w-12 text-right">
                                 {pct}%
                               </span>
@@ -385,7 +430,7 @@ export default function Analytics() {
                     <th className="text-left px-4 py-3 text-[0.7rem] font-medium tracking-wider uppercase text-muted-foreground/70">
                       Email
                     </th>
-                    {questionLabels.map((label, i) => (
+                    {questionLabels.map((_, i) => (
                       <th
                         key={i}
                         className="text-left px-4 py-3 text-[0.7rem] font-medium tracking-wider uppercase text-muted-foreground/70 whitespace-nowrap"
@@ -398,7 +443,7 @@ export default function Analytics() {
                 <tbody>
                   {responses.map((r, idx) => (
                     <tr
-                      key={idx}
+                      key={r.id}
                       className="border-b border-border/20 hover:bg-cream/30 transition-colors"
                     >
                       <td className="px-4 py-3 text-muted-foreground tabular-nums">
@@ -409,17 +454,12 @@ export default function Analytics() {
                       </td>
                       <td className="px-4 py-3 text-charcoal">
                         {r.email || (
-                          <span className="text-muted-foreground/40 italic">
-                            none
-                          </span>
+                          <span className="text-muted-foreground/40 italic">none</span>
                         )}
                       </td>
                       {questionLabels.map((_, i) => (
-                        <td
-                          key={i}
-                          className="px-4 py-3 text-charcoal whitespace-nowrap"
-                        >
-                          {r[i.toString()] || "—"}
+                        <td key={i} className="px-4 py-3 text-charcoal whitespace-nowrap">
+                          {(r[i.toString() as keyof typeof r] as string) || "—"}
                         </td>
                       ))}
                     </tr>
@@ -433,7 +473,7 @@ export default function Analytics() {
         {/* Footer */}
         <div className="text-center mt-12 pb-8">
           <p className="text-xs text-muted-foreground/50">
-            Data stored locally in your browser. Export CSV to save permanently.
+            Data stored securely in the database. Export CSV to download a local copy.
           </p>
         </div>
       </main>

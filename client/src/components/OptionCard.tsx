@@ -13,9 +13,17 @@ interface OptionCardProps {
 }
 
 export default function OptionCard({ option, isSelected, onSelect }: OptionCardProps) {
+  const handleSelect = () => {
+    // Haptic feedback on supported mobile devices
+    if (navigator.vibrate) {
+      navigator.vibrate(8);
+    }
+    onSelect();
+  };
+
   return (
     <motion.button
-      onClick={onSelect}
+      onClick={handleSelect}
       className={`
         relative overflow-hidden rounded-2xl aspect-[1.15] w-full
         flex items-end justify-center

@@ -1,11 +1,11 @@
 /**
- * ThankYouScreen — Final screen with email capture and CSV download
- * Design: Centered, gold checkmark icon, serif headline, pill submit button
+ * ThankYouScreen — Final screen with email capture and server-side persistence
+ * Submits poll responses via tRPC to the database
  */
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { questionLabels } from "@/lib/pollData";
+import { trpc } from "@/lib/trpc";
 
 interface ThankYouScreenProps {
   answers: Record<number, string>;
@@ -15,46 +15,21 @@ export default function ThankYouScreen({ answers }: ThankYouScreenProps) {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
+  const submitMutation = trpc.poll.submit.useMutation({
+    onSuccess: () => setSubmitted(true),
+  });
+
   const handleSubmit = () => {
-    const response: Record<string, string> = {
-      timestamp: new Date().toISOString(),
+    submitMutation.mutate({
       email: email || "",
-    };
-    questionLabels.forEach((_, i) => {
-      response[i.toString()] = answers[i] || "";
+      q0: answers[0] || "",
+      q1: answers[1] || "",
+      q2: answers[2] || "",
+      q3: answers[3] || "",
+      q4: answers[4] || "",
+      q5: answers[5] || "",
+      q6: answers[6] || "",
     });
-
-    // Store in localStorage
-    const stored = JSON.parse(localStorage.getItem("luxuryPollResponses") || "[]");
-    stored.push(response);
-    localStorage.setItem("luxuryPollResponses", JSON.stringify(stored));
-
-    setSubmitted(true);
-  };
-
-  const downloadCSV = () => {
-    const stored = JSON.parse(localStorage.getItem("luxuryPollResponses") || "[]");
-    if (stored.length === 0) return;
-
-    const headers = ["Timestamp", "Email", ...questionLabels];
-    const rows = stored.map((r: Record<string, string>) => {
-      return [
-        r.timestamp,
-        r.email,
-        ...questionLabels.map((_, i) => r[i.toString()] || ""),
-      ]
-        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-        .join(",");
-    });
-
-    const csv = [headers.join(","), ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "community-poll-responses.csv";
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -89,15 +64,15 @@ export default function ThankYouScreen({ answers }: ThankYouScreenProps) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
-          disabled={submitted}
+          disabled={submitted || submitMutation.isPending}
           className="w-full px-5 py-4 border border-border rounded-xl font-sans text-base text-charcoal bg-white outline-none transition-all duration-300 placeholder:text-muted-foreground/40 placeholder:font-light focus:border-gold focus:ring-[3px] focus:ring-gold-muted disabled:opacity-60 mb-5"
         />
 
         <motion.button
           onClick={handleSubmit}
-          disabled={submitted}
+          disabled={submitted || submitMutation.isPending}
           className={`
-            w-full py-4 px-8 rounded-full text-[0.85rem] font-medium tracking-[0.08em] uppercase transition-all duration-300
+            w-full py-4 px-8 rounded-full text-[0.85rem] font-medium tracking-[0.08em] uppercase transition-all duration-300 inline-flex items-center justify-center gap-2
             ${submitted
               ? "bg-gold text-white cursor-default"
               : "bg-charcoal text-cream hover:bg-charcoal-deep hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
@@ -105,8 +80,16 @@ export default function ThankYouScreen({ answers }: ThankYouScreenProps) {
           `}
           whileTap={submitted ? {} : { scale: 0.97 }}
         >
-          {submitted ? "Submitted" : "Submit & Stay Connected"}
+          {submitMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+          {submitted ? "Submitted" : submitMutation.isPending ? "Submitting…" : "Submit & Stay Connected"}
         </motion.button>
+
+        {/* Error */}
+        {submitMutation.isError && (
+          <p className="mt-3 text-[0.85rem] text-red-500">
+            Something went wrong. Please try again.
+          </p>
+        )}
 
         {/* Confirmation */}
         <motion.p
@@ -117,19 +100,6 @@ export default function ThankYouScreen({ answers }: ThankYouScreenProps) {
         >
           Your response has been recorded.
         </motion.p>
-
-        {/* CSV Download */}
-        {submitted && (
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            onClick={downloadCSV}
-            className="mt-4 text-[0.75rem] text-muted-foreground/60 underline hover:text-gold transition-colors bg-transparent border-none font-sans"
-          >
-            Download Responses (CSV)
-          </motion.button>
-        )}
       </div>
     </motion.div>
   );
