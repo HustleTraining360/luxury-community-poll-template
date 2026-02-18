@@ -1,13 +1,16 @@
 /**
- * WelcomeScreen — Opening screen with community building background image
+ * WelcomeScreen — Opening screen with community building background + Highpointe logo
  * Design: Full-bleed dark photo background, light/white text for contrast
- * Image is dark (twilight sky, shadowed building) → use white/cream text
+ * Logo placed above headline for strong community branding
  */
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
 const BG_IMAGE =
   "https://files.manuscdn.com/user_upload_by_module/session_file/310419663030067302/SmrsqxuwFdEigoGu.webp";
+
+const LOGO_IMAGE =
+  "https://files.manuscdn.com/user_upload_by_module/session_file/310419663030067302/TwuhooFIxxgIhoDs.png";
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -33,8 +36,18 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
 
       {/* Content — all light/white text */}
       <div className="relative z-10 flex flex-col items-center">
+        {/* Community Logo */}
+        <motion.img
+          src={LOGO_IMAGE}
+          alt="Highpointe"
+          className="w-[220px] sm:w-[280px] h-auto mb-8 drop-shadow-xl"
+          initial={{ opacity: 0, y: -15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.15 }}
+        />
+
         {/* Gold accent line */}
-        <div className="w-12 h-[2px] bg-gold-light rounded-full mb-10" />
+        <div className="w-12 h-[2px] bg-gold-light rounded-full mb-8" />
 
         <h1 className="font-serif text-[2rem] sm:text-[2.4rem] font-semibold leading-[1.2] text-white tracking-[-0.02em] mb-5 drop-shadow-lg">
           Help Us Design Something Extraordinary
