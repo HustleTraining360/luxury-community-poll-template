@@ -28,6 +28,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { questions, questionLabels } from "@/lib/pollData";
+import ResponseHeatmap from "@/components/ResponseHeatmap";
 import { trpc } from "@/lib/trpc";
 
 // Gold-toned palette for charts
@@ -249,6 +250,13 @@ export default function Analytics() {
             small
           />
         </motion.div>
+
+        {/* Response Heatmap */}
+        {totalResponses > 0 && submissions && (
+          <ResponseHeatmap
+            timestamps={submissions.map((s: any) => s.createdAt)}
+          />
+        )}
 
         {/* No data state */}
         {totalResponses === 0 && (

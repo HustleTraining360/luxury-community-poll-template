@@ -42,3 +42,8 @@
 
 ## Analytics UI Improvement
 - [x] Replace "Question X of 21" labels with reactive progress bars on analytics dashboard
+
+## Response Heatmap
+- [x] Create ResponseHeatmap component (day-of-week x hour-of-day grid)
+- [x] Integrate heatmap into Analytics page between summary cards and question breakdowns
+- [x] Test with existing submission data
