@@ -47,3 +47,10 @@
 - [x] Create ResponseHeatmap component (day-of-week x hour-of-day grid)
 - [x] Integrate heatmap into Analytics page between summary cards and question breakdowns
 - [x] Test with existing submission data
+
+## Bug Fix: Missing Photos & Card Alignment
+- [x] Audit all questions for missing images
+- [x] Source and upload missing images to CDN
+- [x] Fix card alignment — ensure all answer cards are equally sized on desktop
+- [x] Apply headline text change: "Experience" → "Lifestyle"
+- [x] Replace "QUESTION X OF 21" text with reactive progress bar on poll screens

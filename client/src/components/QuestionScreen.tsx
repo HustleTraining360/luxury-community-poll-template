@@ -98,10 +98,23 @@ export default function QuestionScreen({
       exit={{ opacity: 0, x: direction > 0 ? -60 : 60 }}
       transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
-      {/* Question number */}
-      <p className="text-[0.7rem] font-medium tracking-[0.15em] uppercase text-gold mt-5 mb-3">
-        Question {questionIndex + 1} of {totalQuestions}
-      </p>
+      {/* Progress bar */}
+      <div className="mt-5 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-1.5 bg-charcoal/8 rounded-full overflow-hidden">
+            <motion.div
+              className="h-full rounded-full"
+              style={{ background: "linear-gradient(90deg, #C9A96E, #D4B87A)" }}
+              initial={{ width: 0 }}
+              animate={{ width: `${((questionIndex + 1) / totalQuestions) * 100}%` }}
+              transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+            />
+          </div>
+          <span className="text-[0.7rem] font-medium tracking-[0.08em] text-gold/70 tabular-nums shrink-0">
+            {questionIndex + 1}/{totalQuestions}
+          </span>
+        </div>
+      </div>
 
       {/* Headline */}
       <h2 className="font-serif text-[1.6rem] sm:text-[1.8rem] font-semibold text-charcoal leading-[1.25] tracking-[-0.01em] mb-2">
@@ -117,7 +130,7 @@ export default function QuestionScreen({
       {!isMultiSelect && <div className="mb-4" />}
 
       {/* Options Grid */}
-      <div className={`grid ${hasImages ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"} gap-3 flex-1`}>
+      <div className={`grid ${hasImages ? (question.options.length > 6 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2") : "grid-cols-2 sm:grid-cols-3"} gap-3 items-start`}>
         {question.options.map((option) => (
           <OptionCard
             key={option.label}

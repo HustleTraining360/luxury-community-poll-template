@@ -2,6 +2,8 @@
  * OptionCard — Selection card with two modes:
  *   1. Image-backed: Cinematic dark overlay, bottom-aligned white label, gold selection state
  *   2. Compact (text-only): Clean bordered card with gold selection state
+ *
+ * Both modes enforce equal height via aspect-ratio for consistent grid alignment.
  */
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
@@ -73,19 +75,22 @@ export default function OptionCard({
     );
   }
 
-  // Image-backed mode (original)
+  // Image-backed mode — fixed aspect ratio for equal height alignment
   return (
     <motion.button
       onClick={handleSelect}
       className={`
-        relative overflow-hidden rounded-2xl aspect-[1.15] w-full
+        relative overflow-hidden rounded-2xl w-full
         flex items-end justify-center
         transition-all duration-300 ease-out
         focus:outline-none focus-visible:ring-2 focus-visible:ring-gold
         ${isSelected ? "ring-[3px] ring-gold" : "ring-0"}
       `}
       whileTap={{ scale: 0.97 }}
-      style={{ WebkitTapHighlightColor: "transparent" }}
+      style={{
+        WebkitTapHighlightColor: "transparent",
+        aspectRatio: "4 / 3",
+      }}
     >
       {/* Background Image */}
       <img
@@ -112,7 +117,7 @@ export default function OptionCard({
       />
 
       {/* Label */}
-      <span className="relative z-10 pb-3.5 text-white text-[0.8rem] font-medium tracking-wide text-center drop-shadow-md">
+      <span className="relative z-10 pb-3.5 text-white text-[0.8rem] font-medium tracking-wide text-center drop-shadow-md px-2">
         {option.label}
       </span>
 
