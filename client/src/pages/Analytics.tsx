@@ -4,7 +4,7 @@
  * Handles all 21 questions including multi-select (comma-separated) answers
  * Route: /analytics (noindex via meta tag)
  */
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import {
@@ -26,6 +26,8 @@ import {
   Clock,
   Mail,
   Loader2,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { questions, questionLabels } from "@/lib/pollData";
 import ResponseHeatmap from "@/components/ResponseHeatmap";
@@ -133,6 +135,18 @@ export default function Analytics() {
       ? new Date((submissions[0] as any).createdAt).toLocaleString()
       : "—";
 
+  // Clear all data
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const utils = trpc.useUtils();
+  const clearAllMutation = trpc.admin.clearAll.useMutation({
+    onSuccess: () => {
+      utils.admin.submissions.invalidate();
+      utils.admin.submissionCount.invalidate();
+      utils.admin.exportCsv.invalidate();
+      setShowClearConfirm(false);
+    },
+  });
+
   // CSV download from server
   const downloadCSV = () => {
     if (!csvData) return;
@@ -208,17 +222,74 @@ export default function Analytics() {
             Poll Analytics
           </h1>
 
-          <motion.button
-            onClick={downloadCSV}
-            disabled={totalResponses === 0}
-            className="inline-flex items-center gap-2 text-sm text-charcoal bg-white border border-border rounded-full px-4 py-2 hover:border-gold hover:text-gold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            whileTap={{ scale: 0.97 }}
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Export CSV</span>
-          </motion.button>
+          <div className="flex items-center gap-2">
+            <motion.button
+              onClick={() => setShowClearConfirm(true)}
+              disabled={totalResponses === 0}
+              className="inline-flex items-center gap-2 text-sm text-red-600 bg-white border border-red-200 rounded-full px-4 py-2 hover:border-red-400 hover:bg-red-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              whileTap={{ scale: 0.97 }}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Clear All</span>
+            </motion.button>
+            <motion.button
+              onClick={downloadCSV}
+              disabled={totalResponses === 0}
+              className="inline-flex items-center gap-2 text-sm text-charcoal bg-white border border-border rounded-full px-4 py-2 hover:border-gold hover:text-gold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              whileTap={{ scale: 0.97 }}
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Export CSV</span>
+            </motion.button>
+          </div>
         </div>
       </header>
+
+      {/* Clear All Confirmation Dialog */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <motion.div
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-[90%] p-8"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <h3 className="font-serif text-lg font-semibold text-charcoal">
+                Clear All Data?
+              </h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+              This will permanently delete all <strong>{totalResponses}</strong> poll
+              submission{totalResponses !== 1 ? "s" : ""} and associated email addresses.
+              This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="px-5 py-2.5 rounded-full text-sm font-medium text-charcoal bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => clearAllMutation.mutate()}
+                disabled={clearAllMutation.isPending}
+                className="px-5 py-2.5 rounded-full text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-60 flex items-center gap-2"
+              >
+                {clearAllMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                Delete All Data
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       <main className="container max-w-[1100px] mx-auto px-5 py-8 sm:py-12">
         {/* Summary Cards */}

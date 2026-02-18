@@ -54,3 +54,8 @@
 - [x] Fix card alignment — ensure all answer cards are equally sized on desktop
 - [x] Apply headline text change: "Experience" → "Lifestyle"
 - [x] Replace "QUESTION X OF 21" text with reactive progress bar on poll screens
+
+## Clear All Data Feature
+- [x] Add backend tRPC route to delete all poll submissions
+- [x] Add "Clear All Data" button with confirmation dialog on Analytics page
+- [x] Test clearing data and verify analytics resets

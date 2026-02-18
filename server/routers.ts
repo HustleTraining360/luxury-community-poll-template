@@ -7,6 +7,7 @@ import {
   createPollSubmission,
   getAllPollSubmissions,
   getPollSubmissionCount,
+  deleteAllPollSubmissions,
 } from "./db";
 
 const submitSchema = z.object({
@@ -97,6 +98,12 @@ export const appRouter = router({
     /** Public: get submission count */
     submissionCount: publicProcedure.query(async () => {
       return getPollSubmissionCount();
+    }),
+
+    /** Public: clear all submissions */
+    clearAll: publicProcedure.mutation(async () => {
+      await deleteAllPollSubmissions();
+      return { success: true };
     }),
 
     /** Public: export CSV string */

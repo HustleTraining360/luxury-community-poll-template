@@ -115,3 +115,9 @@ export async function getPollSubmissionsForCsv() {
   if (!db) return [];
   return db.select().from(pollSubmissions).orderBy(desc(pollSubmissions.createdAt));
 }
+
+export async function deleteAllPollSubmissions() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(pollSubmissions);
+}
