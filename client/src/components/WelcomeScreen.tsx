@@ -6,9 +6,9 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
-const BG_IMAGE =
-  "https://files.manuscdn.com/user_upload_by_module/session_file/310419663030067302/SmrsqxuwFdEigoGu.webp";
+const BG_IMAGE = "/assets/clubhouse.jpg";
 
+// TODO: Replace with community logo
 const LOGO_IMAGE =
   "https://files.manuscdn.com/user_upload_by_module/session_file/310419663030067302/TwuhooFIxxgIhoDs.png";
 
@@ -50,7 +50,7 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         <div className="w-12 h-[2px] bg-gold-light rounded-full mb-8" />
 
         <h1 className="font-serif text-[2rem] sm:text-[2.4rem] font-semibold leading-[1.2] text-white tracking-[-0.02em] mb-5 drop-shadow-lg">
-          Help Us Design An Extraordinary Community Lifestyle For You!
+          Help Shape Your Community's Future
         </h1>
 
         <p className="text-base text-white/80 font-light leading-relaxed max-w-[340px] mb-12 drop-shadow-md" style={{fontSize: '18px', fontWeight: '500'}}>

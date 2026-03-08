@@ -82,9 +82,16 @@ export default function QuestionScreen({
     ((isMultiSelect && selectedValues.includes(question.conditionalField.triggerValue)) ||
       (!isMultiSelect && selectedAnswer === question.conditionalField.triggerValue));
 
-  const hasAnswer = isMultiSelect
+  // Check if answer is complete (including conditional field if shown)
+  const requiresConditionalField =
+    showConditionalField && question.conditionalField;
+  const conditionalFieldFilled = requiresConditionalField
+    ? (conditionalFieldValue?.trim() ?? "").length > 0
+    : true;
+
+  const hasAnswer = (isMultiSelect
     ? selectedValues.length > 0
-    : !!selectedAnswer;
+    : !!selectedAnswer) && conditionalFieldFilled;
 
   // Check if any option has an image
   const hasImages = question.options.some((o) => !!o.image);
