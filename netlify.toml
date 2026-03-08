@@ -1,0 +1,8 @@
+[build]
+  command = "pnpm build"
+  publish = "dist/public"
+  functions = "dist"
+
+[context.production]
+  command = "pnpm build"
+  publish = "dist/public"
